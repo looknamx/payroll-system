@@ -221,7 +221,7 @@ export default function Pnd1ReportPage() {
                         {r.employee?.idCardNumber || '-'}
                       </td>
                       <td className="border border-slate-400 p-2 font-medium">
-                        {r.employee?.titleName} {r.employee?.firstName} {r.employee?.lastName}
+                        {r.employee?.titleName || (r.employee?.gender === 'หญิง' ? 'นางสาว' : 'นาย')} {r.employee?.firstName} {r.employee?.lastName}
                       </td>
                       <td className="border border-slate-400 p-2 text-center">
                         {formatThaiDateNumeric(r.payrollPeriod?.payDate)}

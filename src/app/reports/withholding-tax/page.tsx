@@ -157,7 +157,7 @@ export default function WithholdingTaxPage() {
             <div>
               <span className="text-slate-500">ชื่อ:</span>{' '}
               <span className="font-semibold">
-                {employee?.titleName} {employee?.firstName} {employee?.lastName}
+                {employee?.titleName || (employee?.gender === 'หญิง' ? 'นางสาว' : 'นาย')} {employee?.firstName} {employee?.lastName}
               </span>
             </div>
             <div>

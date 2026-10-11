@@ -42,8 +42,9 @@ export default function EmployeesPage() {
   const initialForm = {
     avatar: '',
     employeeCode: '',
+    titleName: 'นาย',
     fullName: '', // รวมชื่อ-นามสกุล
-    gender: 'ไม่ระบุ',
+    gender: 'ชาย',
     birthDate: '',
     nationality: 'ไทย',
     positionId: '',
@@ -123,8 +124,9 @@ export default function EmployeesPage() {
     setFormData({
       avatar: emp.avatar || '',
       employeeCode: emp.employeeCode || '',
+      titleName: emp.titleName || (emp.gender === 'หญิง' ? 'นางสาว' : 'นาย'),
       fullName,
-      gender: emp.gender || 'ไม่ระบุ',
+      gender: emp.gender || 'ชาย',
       birthDate: emp.birthDate ? new Date(emp.birthDate).toISOString().split('T')[0] : '',
       nationality: emp.nationality || 'ไทย',
       positionId: emp.positionId ? String(emp.positionId) : '',
@@ -185,6 +187,7 @@ export default function EmployeesPage() {
 
     const payload = {
       employeeCode: formData.employeeCode.trim(),
+      titleName: formData.titleName || (formData.gender === 'หญิง' ? 'นางสาว' : 'นาย'),
       firstName,
       lastName,
       avatar: formData.avatar || null,
@@ -425,7 +428,7 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="font-semibold text-slate-900">
-                          {emp.firstName} {emp.lastName}
+                          {emp.titleName || (emp.gender === 'หญิง' ? 'นางสาว' : 'นาย')} {emp.firstName} {emp.lastName}
                         </div>
                         <div className="text-xs text-slate-400">
                           {emp.idCardNumber ? `ปชช: ${emp.idCardNumber}` : 'ยังไม่ระบุเลข ปชช.'}
@@ -573,16 +576,34 @@ export default function EmployeesPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    ชื่อ-นามสกุล *
+                    คำนำหน้า และ ชื่อ-นามสกุล *
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="สมชาย ใจดี"
-                    value={formData.fullName}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-blue-500"
-                  />
+                  <div className="flex gap-2">
+                    <select
+                      value={formData.titleName}
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
+                        setFormData({
+                          ...formData,
+                          titleName: newTitle,
+                          gender: newTitle === 'นาย' ? 'ชาย' : (newTitle === 'นาง' || newTitle === 'นางสาว' ? 'หญิง' : formData.gender),
+                        });
+                      }}
+                      className="w-28 px-2 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-blue-500 bg-white shrink-0 font-medium"
+                    >
+                      <option value="นาย">นาย</option>
+                      <option value="นางสาว">นางสาว</option>
+                      <option value="นาง">นาง</option>
+                    </select>
+                    <input
+                      type="text"
+                      required
+                      placeholder="สมชาย ใจดี"
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
 
                 {/* Row 2 */}

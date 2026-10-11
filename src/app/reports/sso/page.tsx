@@ -68,7 +68,7 @@ export default function SsoReportPage() {
     return {
       index: idx + 1,
       idCard: r.employee?.idCardNumber || '-',
-      name: `${r.employee?.titleName || ''} ${r.employee?.firstName} ${r.employee?.lastName}`,
+      name: `${r.employee?.titleName || (r.employee?.gender === 'หญิง' ? 'นางสาว' : 'นาย')} ${r.employee?.firstName} ${r.employee?.lastName}`,
       actualWage: rawSalary,
       ssoWageBase,
       employeeContribution,

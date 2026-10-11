@@ -185,7 +185,7 @@ function PayslipContent() {
             <div>
               <span className="text-slate-500">ชื่อ - นามสกุล:</span>
               <div className="font-bold text-slate-900 text-sm">
-                {currentRecord.employee?.titleName} {currentRecord.employee?.firstName}{' '}
+                {currentRecord.employee?.titleName || (currentRecord.employee?.gender === 'หญิง' ? 'นางสาว' : 'นาย')} {currentRecord.employee?.firstName}{' '}
                 {currentRecord.employee?.lastName}
               </div>
             </div>
@@ -337,7 +337,7 @@ function PayslipContent() {
               <div className="h-14 border-b border-slate-400 border-dashed max-w-[200px] mx-auto"></div>
               <div className="mt-2 font-medium">ลงชื่อ......................................................</div>
               <div className="font-semibold text-slate-800 mt-0.5">
-                ({currentRecord.employee?.titleName} {currentRecord.employee?.firstName}{' '}
+                ({currentRecord.employee?.titleName || (currentRecord.employee?.gender === 'หญิง' ? 'นางสาว' : 'นาย')} {currentRecord.employee?.firstName}{' '}
                 {currentRecord.employee?.lastName})
               </div>
               <div className="text-[11px] text-slate-500">พนักงาน / ผู้รับเงิน</div>
