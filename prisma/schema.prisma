@@ -1,0 +1,317 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ข้อมูลบริษัท
+model Company {
+  id                  Int      @id @default(autoincrement())
+  name                String   @default("บริษัท ตัวอย่าง จำกัด")
+  nameEn              String?  @default("Sample Company Co., Ltd.")
+  taxId               String?  @default("0105550000000")
+  address             String?  @default("123 ถนนสุขุมวิท แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110")
+  phone               String?  @default("02-123-4567")
+  email               String?  @default("hr@example.com")
+  authorizedSignatory String?  @default("นายสมศักดิ์ รักชาติ")
+  signatoryPosition   String?  @default("กรรมการผู้จัดการ")
+  socialSecurityNo    String?  @default("1000000000")
+  socialSecurityBranch String? @default("000000")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// แผนก
+model Department {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  code      String?    @unique
+  isActive  Boolean    @default(true)
+  employees Employee[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ตำแหน่ง
+model Position {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  isActive  Boolean    @default(true)
+  employees Employee[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ประเภทการจ้าง
+model EmploymentType {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique // "พนักงานประจำ", "พนักงานรายวัน"
+  code      String     @unique // "MONTHLY", "DAILY"
+  isActive  Boolean    @default(true)
+  employees Employee[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// พนักงาน
+model Employee {
+  id                     Int            @id @default(autoincrement())
+  employeeCode           String         @unique // รหัสพนักงาน
+  titleName              String?        @default("นาย") // นาย / นาง / นางสาว
+  firstName              String
+  lastName               String
+  firstNameEn            String?
+  lastNameEn             String?
+  avatar                 String?        // รูปภาพพนักงาน (base64 หรือ url)
+  gender                 String?        @default("ไม่ระบุ") // ไม่ระบุ, ชาย, หญิง
+  nationality            String?        @default("ไทย")
+  idCardNumber           String?        // เลขบัตรประชาชน 13 หลัก
+  birthDate              DateTime?
+  phone                  String?
+  email                  String?
+  address                String?
+  bankAccount            String?        // เลขบัญชีธนาคาร
+  bankName               String?        // ธนาคาร เช่น กสิกรไทย, กรุงเทพ
+  departmentId           Int?
+  department             Department?    @relation(fields: [departmentId], references: [id])
+  positionId             Int?
+  position               Position?      @relation(fields: [positionId], references: [id])
+  employmentTypeId       Int?
+  employmentType         EmploymentType? @relation(fields: [employmentTypeId], references: [id])
+  startDate              DateTime       @default(now())
+  salary                 Float          @default(0) // เงินเดือนหรือฐานรายวัน
+  dailyWage              Float          @default(0) // อัตราค่าจ้างรายวัน (ถ้ามี)
+  newSalary              Float?         // เงินเดือนใหม่
+  newSalaryEffectiveDate DateTime?      // มีผลตั้งแต่วันที่
+  socialSecurityId       String?
+  ssoEmployeeRate        Float?         @default(5.0) // อัตรา กสส. พนักงาน (%)
+  ssoEmployerRate        Float?         @default(5.0) // บริษัทสมทบ กสส. (%)
+  providentFundRate      Float?         @default(0)   // กองทุนสำรองเลี้ยงชีพ (%)
+  hasSocialSecurity      Boolean        @default(true) // มีประกันสังคม (หัก 5%) หรือยกเว้น
+  employeeLevel          String?        @default("พนักงาน") // พนักงาน, หัวหน้างาน, ผู้จัดการ
+  hasOvertime            Boolean        @default(true) // คิด OT ได้ (ปกติ) หรือไม่คิด OT
+  withholdTaxRate        Float          @default(0) // % ภาษีหัก ณ ที่จ่าย หรือคำนวณตามขั้นบันได
+  status                 String         @default("ACTIVE") // ACTIVE, RESIGNED, SUSPENDED
+  resignDate             DateTime?
+
+  attendances     Attendance[]
+  leaveRequests   LeaveRequest[]
+  payrollRecords  PayrollRecord[]
+  advances        Advance[]
+  resignation     Resignation?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// บันทึกเวลาทำงาน
+model Attendance {
+  id            Int       @id @default(autoincrement())
+  employeeId    Int
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date          DateTime  // วันที่ (YYYY-MM-DD)
+  checkIn       DateTime? // เวลาเข้า
+  checkOut      DateTime? // เวลาออก
+  status        String    @default("PRESENT") // PRESENT (มาปกติ), LATE (สาย), ABSENT (ขาด), LEAVE (ลา), HOLIDAY (วันหยุด)
+  overtimeHours Float     @default(0)
+  note          String?
+  source        String    @default("MANUAL") // MANUAL, MOBILE, QR, IMPORT
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([employeeId, date])
+}
+
+// ประเภทการลา
+model LeaveType {
+  id             Int            @id @default(autoincrement())
+  name           String         @unique // "ลาป่วย", "ลากิจ", "ลาพักร้อน"
+  maxDaysPerYear Int            @default(30)
+  isPaid         Boolean        @default(true)
+  isActive       Boolean        @default(true)
+  leaveRequests  LeaveRequest[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+// คำขอลา
+model LeaveRequest {
+  id          Int       @id @default(autoincrement())
+  employeeId  Int
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveTypeId Int
+  leaveType   LeaveType @relation(fields: [leaveTypeId], references: [id])
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Float     @default(1)
+  reason      String?
+  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// การแจ้งลาออก
+model Resignation {
+  id              Int      @id @default(autoincrement())
+  employeeId      Int      @unique
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  noticeDate      DateTime @default(now()) // วันที่แจ้ง
+  resignDate      DateTime // วันที่มีผลลาออก
+  lastWorkingDate DateTime // วันทำงานสุดท้าย
+  reason          String?
+  status          String   @default("APPROVED") // PENDING, APPROVED, CANCELLED
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// เบิกจ่ายล่วงหน้า
+model Advance {
+  id              Int       @id @default(autoincrement())
+  employeeId      Int
+  employee        Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  amount          Float
+  requestDate     DateTime  @default(now())
+  reason          String?
+  status          String    @default("APPROVED") // PENDING, APPROVED, DEDUCTED, REJECTED
+  payrollRecordId Int?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ประเภทเงินได้
+model IncomeType {
+  id        Int             @id @default(autoincrement())
+  name      String          @unique // เช่น "เงินเดือน", "ค่าล่วงเวลา (OT)", "เบี้ยเลี้ยง", "โบนัส", "ค่าพาหนะ"
+  code      String          @unique
+  isDefault Boolean         @default(false)
+  isActive  Boolean         @default(true)
+  items     PayrollIncome[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+// ประเภทเงินหัก
+model DeductionType {
+  id        Int                @id @default(autoincrement())
+  name      String             @unique // เช่น "ประกันสังคม", "ภาษีหัก ณ ที่จ่าย", "เบิกล่วงหน้า", "หักมาสาย/ขาดงาน"
+  code      String             @unique
+  isDefault Boolean            @default(false)
+  isActive  Boolean            @default(true)
+  items     PayrollDeduction[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+}
+
+// รอบเงินเดือน
+model PayrollPeriod {
+  id        Int             @id @default(autoincrement())
+  month     Int             // 1-12
+  year      Int             // ปี ค.ศ. เช่น 2026
+  name      String          // เช่น "ตุลาคม 2569"
+  startDate DateTime
+  endDate   DateTime
+  payDate   DateTime?
+  status    String          @default("DRAFT") // DRAFT (ร่าง), VERIFIED (ตรวจสอบแล้ว), PAID (จ่ายแล้ว)
+  records   PayrollRecord[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([month, year])
+}
+
+// รายการเงินเดือนรายบุคคล
+model PayrollRecord {
+  id              Int                @id @default(autoincrement())
+  payrollPeriodId Int
+  payrollPeriod   PayrollPeriod      @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade)
+  employeeId      Int
+  employee        Employee           @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  baseSalary      Float              @default(0) // เงินเดือนฐาน
+  workDays        Float              @default(0)
+  absentDays      Float              @default(0)
+  lateDays        Float              @default(0)
+  leaveDays       Float              @default(0)
+  overtimeHours   Float              @default(0)
+  totalIncome     Float              @default(0) // รวมเงินได้
+  totalDeduction  Float              @default(0) // รวมเงินหัก
+  netPay          Float              @default(0) // สุทธิ
+  status          String             @default("DRAFT") // DRAFT, VERIFIED, PAID
+  paymentMethod   String             @default("BANK_TRANSFER") // BANK_TRANSFER, CASH
+  note            String?
+  incomes         PayrollIncome[]
+  deductions      PayrollDeduction[]
+  histories       PayrollHistory[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@unique([payrollPeriodId, employeeId])
+}
+
+// เงินได้รายคนต่อรอบ
+model PayrollIncome {
+  id              Int           @id @default(autoincrement())
+  payrollRecordId Int
+  payrollRecord   PayrollRecord @relation(fields: [payrollRecordId], references: [id], onDelete: Cascade)
+  incomeTypeId    Int
+  incomeType      IncomeType    @relation(fields: [incomeTypeId], references: [id], onDelete: Cascade)
+  amount          Float         @default(0)
+  note            String?
+  createdAt       DateTime      @default(now())
+}
+
+// เงินหักรายคนต่อรอบ
+model PayrollDeduction {
+  id              Int           @id @default(autoincrement())
+  payrollRecordId Int
+  payrollRecord   PayrollRecord @relation(fields: [payrollRecordId], references: [id], onDelete: Cascade)
+  deductionTypeId Int
+  deductionType   DeductionType @relation(fields: [deductionTypeId], references: [id], onDelete: Cascade)
+  amount          Float         @default(0)
+  note            String?
+  createdAt       DateTime      @default(now())
+}
+
+// ประวัติการแก้ไขรายการเงินเดือน
+model PayrollHistory {
+  id              Int           @id @default(autoincrement())
+  payrollRecordId Int
+  payrollRecord   PayrollRecord @relation(fields: [payrollRecordId], references: [id], onDelete: Cascade)
+  action          String        // CREATE, UPDATE, VERIFY, PAY, REVERT
+  description     String
+  previousData    String?       // JSON
+  newData         String?       // JSON
+  performedBy     String?       @default("HR Admin")
+  createdAt       DateTime      @default(now())
+}
+
+// ปฏิทินวันหยุดบริษัท
+model CompanyHoliday {
+  id        Int      @id @default(autoincrement())
+  date      DateTime // วันที่หยุด
+  name      String   // ชื่อวันหยุด
+  year      Int      // ปี พ.ศ. เช่น 2569
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([date, name])
+}
+
+// การตั้งค่าระบบ
+model SystemSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  label     String
+  group     String   @default("general") // general, payroll, sso, tax, time
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
